@@ -1,0 +1,623 @@
+//Adv Piston Math V2
+//Author - Patrick Newman 
+//Last Edited - 23/08/23
+
+//---------------------------------------------------------------------------------------------------------------------------------
+
+//Initial vectors 
+float sideA_piston_pivot_distance = detail(0, "sideA_pivot_distance");
+float sideA_piston_pivotToShaftLength = detail(0, "sideA_pivot_to_shaft_length");
+float sideA_piston_shaftLength = detail(0, "sideA_shaft_length");
+vector sideA_origin_position = point(1, "P", 0);
+setpointattrib(0, "P", 0, sideA_origin_position);
+
+float sideB_piston_pivot_distance = detail(0, "sideB_pivot_distance");
+float sideB_piston_pivotToShaftLength = detail(0, "sideB_pivot_to_shaft_length");
+float sideB_piston_shaftLength = detail(0, "sideB_shaft_length");
+vector sideB_origin_position = point(2, "P", 0);
+setpointattrib(0, "P", 1, sideB_origin_position);
+
+//Add X axis 
+
+vector positiveX = set(1, 0, 0);
+vector negativeX = set(-1, 0, 0);
+
+vector sideA_origin_positiveX = positiveX;
+vector sideA_origin_negativeX = negativeX;
+
+vector sideB_origin_positiveX = positiveX;
+vector sideB_origin_negativeX = negativeX;
+
+
+vector sideA_origin_forward = normalize(set(0, 1, 0));
+vector sideB_origin_forward = normalize(set(0, -1, 0)); 
+
+//x rotation - rotation direction needs to be determined by y pos 
+//if side A higher than side B - side A = rot x , side B = - rotx 
+//if same Y then x rot not possible 
+//if side A lower than side B - side A = - rot x , side B = rotx 
+
+
+//create pivot points 
+
+vector sideA_pivot1_position = sideA_origin_position + sideA_origin_forward * sideA_piston_pivot_distance;
+int  sideA_pivot1 = addpoint(0, sideA_pivot1_position);
+
+vector sideB_pivot1_position = sideB_origin_position + sideB_origin_forward * sideB_piston_pivot_distance;
+int  sideB_pivot1 = addpoint(0, sideB_pivot1_position);
+
+
+//create aim 
+vector pivot1_aimDirection = normalize(sideB_pivot1_position - sideA_pivot1_position);
+
+
+// fix otherside y angle 
+//add other pts 
+
+
+
+if (`chs("../transform1/ty")` < `chs("../transform2/ty")`){ //Side A lower than Side B
+    
+    //origin forward and x axis'
+    sideA_origin_forward = normalize(set(0, 1, 0));
+    setpointattrib(0, "forward", 0, sideA_origin_forward);
+    sideB_origin_forward = normalize(set(0, -1, 0));
+    setpointattrib(0, "forward", 1, sideB_origin_forward); 
+    
+    setpointattrib(0, "positive_x", 0, sideA_origin_positiveX);
+    setpointattrib(0, "negative_x", 0, sideA_origin_negativeX);
+    
+    setpointattrib(0, "positive_x", 1, sideB_origin_negativeX);
+    setpointattrib(0, "negative_x", 1, sideB_origin_positiveX);
+    
+    //x rotate
+    
+    vector4 sideA_origin_quatY = quaternion(radians(`chs("../MASTER_CONTROL/point_a_rotationx")`) , sideA_origin_positiveX);
+    sideA_origin_forward = qrotate(sideA_origin_quatY, sideA_origin_forward);
+    setpointattrib(0, "forward", 0,  sideA_origin_forward);
+    
+    vector4 sideB_origin_quatY = quaternion(radians(`chs("../MASTER_CONTROL/point_b_rotationx")`) , sideB_origin_positiveX);
+    sideB_origin_forward = qrotate(sideB_origin_quatY, sideB_origin_forward);
+    setpointattrib(0, "forward", 1,  sideB_origin_forward);
+  
+    //points pos
+    
+    sideA_pivot1_position = sideA_origin_position + sideA_origin_forward * sideA_piston_pivot_distance;;
+    setpointattrib(0, "P", sideA_pivot1, sideA_pivot1_position);     
+    
+    sideB_pivot1_position = sideB_origin_position + sideB_origin_forward * sideB_piston_pivot_distance;;
+    setpointattrib(0, "P", sideB_pivot1, sideB_pivot1_position);      
+   
+    vector sideA_pivot1_positiveX = sideA_origin_positiveX;
+    vector sideA_pivot1_negativeX = sideA_origin_negativeX;
+    setpointattrib(0, "positive_x", sideA_pivot1, sideA_pivot1_positiveX);
+    setpointattrib(0, "negative_x", sideA_pivot1, sideA_pivot1_negativeX);
+    
+    vector sideB_pivot1_positiveX = sideB_origin_negativeX;
+    vector sideB_pivot1_negativeX = sideB_origin_positiveX;
+    setpointattrib(0, "positive_x", sideB_pivot1, sideB_pivot1_positiveX);
+    setpointattrib(0, "negative_x", sideB_pivot1, sideB_pivot1_negativeX);
+    
+    //aim
+    vector sideA_pivot1_aim = pivot1_aimDirection;
+    setpointattrib(0, "pivot1_aim", sideA_pivot1, sideA_pivot1_aim);
+    vector sideB_pivot1_aim = -pivot1_aimDirection;
+    setpointattrib(0, "pivot1_aim", sideB_pivot1, sideB_pivot1_aim);
+    
+    //flatten aim 
+
+    vector sideA_pivot1_flattenedAim = normalize(sideA_pivot1_aim * set(1, 0, 1));
+    
+    vector4 sideA_pivot1_quatY = quaternion(-radians(`chs("../MASTER_CONTROL/point_a_rotationx")`) , sideA_origin_forward);
+    sideA_pivot1_flattenedAim = qrotate(sideA_pivot1_quatY, sideA_pivot1_flattenedAim);
+    setpointattrib(0, "pivot1_flattened_aim", sideA_pivot1, sideA_pivot1_flattenedAim);   
+    
+    vector sideB_pivot1_flattenedAim = normalize(sideB_pivot1_aim * set(1, 0, 1));
+    
+    vector4 sideB_pivot1_quatY = quaternion(-radians(`chs("../MASTER_CONTROL/point_b_rotationx")`) , sideB_origin_forward);
+    sideB_pivot1_flattenedAim = qrotate(sideB_pivot1_quatY, sideB_pivot1_flattenedAim);
+    setpointattrib(0, "pivot1_flattened_aim", sideB_pivot1, sideB_pivot1_flattenedAim);   
+    
+    //add end pts 
+    
+    vector sideA_pivot1_aimPointPosistion = sideA_pivot1_position + sideA_pivot1_aim;
+    int sideA_pivot1_aimPoint = addpoint(0, sideA_pivot1_aimPointPosistion);
+    
+    vector sideA_pivot1_flattenedAimPointPosistion = sideA_pivot1_position + sideA_pivot1_flattenedAim;
+    int sideA_pivot1_flattenedAimPoint = addpoint(0, sideA_pivot1_flattenedAimPointPosistion); 
+    
+    vector sideA_pivot1_positiveXPointPosition = sideA_pivot1_position + sideA_pivot1_positiveX;
+    int sideA_pivot1_positiveXPoint = addpoint(0, sideA_pivot1_positiveXPointPosition);
+    
+    vector sideA_pivot1_negativeXPointPosition = sideA_pivot1_position + sideA_pivot1_negativeX;
+    int sideA_pivot1_negativeXPoint = addpoint(0, sideA_pivot1_negativeXPointPosition);
+    
+    vector sideB_pivot1_aimPointPosistion = sideB_pivot1_position + sideB_pivot1_aim;
+    int sideB_pivot1_aimPoint = addpoint(0, sideB_pivot1_aimPointPosistion);
+    
+    vector sideB_pivot1_flattenedAimPointPosistion = sideB_pivot1_position + sideB_pivot1_flattenedAim;
+    int sideB_pivot1_flattenedAimPoint = addpoint(0, sideB_pivot1_flattenedAimPointPosistion); 
+    
+    vector sideB_pivot1_positiveXPointPosition = sideB_pivot1_position + sideB_pivot1_positiveX;
+    int sideB_pivot1_positiveXPoint = addpoint(0, sideB_pivot1_positiveXPointPosition);
+    
+    vector sideB_pivot1_negativeXPointPosition = sideB_pivot1_position + sideB_pivot1_negativeX;
+    int sideB_pivot1_negativeXPoint = addpoint(0, sideB_pivot1_negativeXPointPosition);        
+    
+    
+    //aim to flattened aim angle 
+    vector sideA_pivot1_aimToFlattenedAimDirection = sideA_pivot1_flattenedAimPointPosistion - sideA_pivot1_aimPointPosistion;
+    vector sideA_pivot1_aimToFlattenedAim = sideA_pivot1_aimToFlattenedAimDirection;
+    float sideA_pivot1_aimToFlattenedAimMagnitude = length(sideA_pivot1_aimToFlattenedAim);
+    float sideA_pivot1_aimToFlattenedAimAngle = degrees(acos( (2 - (sideA_pivot1_aimToFlattenedAimMagnitude * sideA_pivot1_aimToFlattenedAimMagnitude)) / (2)) );
+    f@sideA_pivot1_aimToFlattenedAimAngle = sideA_pivot1_aimToFlattenedAimAngle;
+    setpointattrib(0, "hyp", sideA_pivot1_aimPoint, sideA_pivot1_aimToFlattenedAim);
+    
+    vector sideB_pivot1_aimToFlattenedAimDirection = sideB_pivot1_flattenedAimPointPosistion - sideB_pivot1_aimPointPosistion;
+    vector sideB_pivot1_aimToFlattenedAim = sideB_pivot1_aimToFlattenedAimDirection;
+    float sideB_pivot1_aimToFlattenedAimMagnitude = length(sideB_pivot1_aimToFlattenedAim);
+    float sideB_pivot1_aimToFlattenedAimAngle = degrees(acos( (2 - (sideB_pivot1_aimToFlattenedAimMagnitude * sideB_pivot1_aimToFlattenedAimMagnitude)) / (2)) );
+    f@sideB_pivot1_aimToFlattenedAimAngle = sideB_pivot1_aimToFlattenedAimAngle;
+    setpointattrib(0, "hyp", sideB_pivot1_aimPoint, sideB_pivot1_aimToFlattenedAim);    
+    
+    // y rotation - x clockwise
+    
+    vector sideA_pivot1_positiveZ = normalize(cross(sideA_pivot1_positiveX, sideA_origin_forward));
+    setpointattrib(0, "positive_z", sideA_pivot1, sideA_pivot1_positiveZ);
+    vector sideA_pivot1_negativeZ = normalize(cross(sideA_pivot1_negativeX, sideA_origin_forward));
+    setpointattrib(0, "negative_z", sideA_pivot1, sideA_pivot1_negativeZ);
+    
+    vector sideB_pivot1_positiveZ = normalize(cross(sideB_pivot1_positiveX, sideB_origin_forward));
+    setpointattrib(0, "positive_z", sideB_pivot1, sideB_pivot1_positiveZ);
+    vector sideB_pivot1_negativeZ = normalize(cross(sideB_pivot1_negativeX, sideB_origin_forward));
+    setpointattrib(0, "negative_z", sideB_pivot1, sideB_pivot1_negativeZ);    
+    
+    
+    if (sideA_pivot1_aim.x > 0) {
+     
+        vector sideA_pivot1_yRotationHypotenous = sideA_pivot1_flattenedAimPointPosistion - sideA_pivot1_positiveXPointPosition;
+        setpointattrib(0, "hyp", sideA_pivot1_positiveXPoint, sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationHypotenousMagnitude = length(sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationAngle = degrees(acos( (2 - (sideA_pivot1_yRotationHypotenousMagnitude * sideA_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;     
+        
+        if (sideA_pivot1_aim.x > 0 && sideA_pivot1_aim.z > 0){
+            sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;    
+        } else if (sideA_pivot1_aim.x > 0 && sideA_pivot1_aim.z < 0){
+            sideA_pivot1_yRotationAngle = 360 - sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle; 
+        }
+
+        vector sideB_pivot1_yRotationHypotenous = sideB_pivot1_flattenedAimPointPosistion - sideB_pivot1_positiveXPointPosition;
+        setpointattrib(0, "hyp", sideB_pivot1_positiveXPoint, sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationHypotenousMagnitude = length(sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationAngle = degrees(acos( (2 - (sideB_pivot1_yRotationHypotenousMagnitude * sideB_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;
+
+        if (sideB_pivot1_aim.x < 0 && sideB_pivot1_aim.z < 0){
+            sideB_pivot1_yRotationAngle = 360 -sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;    
+        } else if (sideB_pivot1_aim.x < 0 && sideB_pivot1_aim.z > 0){
+            sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle; 
+        }        
+        
+    } else if (sideA_pivot1_aim.x < 0 ) { 
+    
+    
+        vector sideA_pivot1_yRotationHypotenous = sideA_pivot1_flattenedAimPointPosistion - sideA_pivot1_negativeXPointPosition;
+        setpointattrib(0, "hyp", sideA_pivot1_negativeXPoint, sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationHypotenousMagnitude = length(sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationAngle = degrees(acos( (2 - (sideA_pivot1_yRotationHypotenousMagnitude * sideA_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;
+
+        if (sideA_pivot1_aim.x < 0 && sideA_pivot1_aim.z > 0) {
+            sideA_pivot1_yRotationAngle = 180 - sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle; 
+        } else if (sideA_pivot1_aim.x < 0 && sideA_pivot1_aim.z < 0) {
+            sideA_pivot1_yRotationAngle = 180 + sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle; 
+        } 
+        
+        vector sideB_pivot1_yRotationHypotenous = sideB_pivot1_flattenedAimPointPosistion - sideB_pivot1_negativeXPointPosition;
+        setpointattrib(0, "hyp", sideB_pivot1_negativeXPoint, sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationHypotenousMagnitude = length(sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationAngle = degrees(acos( (2 - (sideB_pivot1_yRotationHypotenousMagnitude * sideB_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;        
+
+        if (sideB_pivot1_aim.x > 0 && sideB_pivot1_aim.z < 0) {
+            sideB_pivot1_yRotationAngle = 180 + sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle; 
+        } else if (sideB_pivot1_aim.x > 0 && sideB_pivot1_aim.z > 0) {
+            sideB_pivot1_yRotationAngle = 180 - sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle; 
+        }         
+    } 
+       
+    if (sideA_pivot1_flattenedAim ==  sideA_pivot1_positiveX){
+        f@sideA_pivot1_yRotationAngle = 0;
+    } else if (sideA_pivot1_flattenedAim ==  sideA_pivot1_positiveZ){
+        f@sideA_pivot1_yRotationAngle = 90;
+    } else if (sideA_pivot1_flattenedAim ==  sideA_pivot1_negativeX){
+        f@sideA_pivot1_yRotationAngle = 180;
+    } else if (sideA_pivot1_flattenedAim ==  sideA_pivot1_negativeZ){
+        f@sideA_pivot1_yRotationAngle = 270;    
+    }
+    
+
+    
+    if (sideB_pivot1_flattenedAim ==  sideB_pivot1_positiveX){
+        f@sideB_pivot1_yRotationAngle = 0;
+    } else if (sideB_pivot1_flattenedAim ==  sideB_pivot1_positiveZ){
+        f@sideB_pivot1_yRotationAngle = 90;
+    } else if (sideB_pivot1_flattenedAim ==  sideB_pivot1_negativeX){
+        f@sideB_pivot1_yRotationAngle = 180;
+    } else if (sideB_pivot1_flattenedAim ==  sideB_pivot1_negativeZ){
+        f@sideA_pivot1_yRotationAngle = 270;    
+    }  
+    
+    
+    //Add start piston pt 
+    float sideA_pivot_to_shaft_length = detail(0, "sideA_pivot_to_shaft_length");
+
+    vector sideA_piston_startPointPosition = sideA_pivot1_position - sideA_pivot1_aim * sideA_pivot_to_shaft_length; 
+    int sideA_piston_startPoint = addpoint(0, sideA_piston_startPointPosition); 
+
+    float sideB_pivot_to_shaft_length = detail(0, "sideB_pivot_to_shaft_length");
+
+    vector sideB_piston_startPointPosition = sideB_pivot1_position + sideB_pivot1_aim * sideB_pivot_to_shaft_length; 
+    int sideB_piston_startPoint = addpoint(0, sideB_piston_startPointPosition); 
+    
+    //Add end of piston point 
+    float sideA_piston_shaft_length = detail(0, "sideA_shaft_length");
+    vector sideA_piston_endPointPosition = sideA_pivot1_position + sideA_pivot1_aim * (sideA_pivot_to_shaft_length + sideA_piston_shaft_length);
+    int sideA_piston_endPoint = addpoint(0, sideA_piston_endPointPosition);
+    
+    float sideB_piston_shaft_length = detail(0, "sideB_shaft_length");
+    vector sideB_piston_endPointPosition = sideB_pivot1_position + sideB_pivot1_aim * (sideB_pivot_to_shaft_length + sideB_piston_shaft_length);
+    int sideB_piston_endPoint = addpoint(0, sideB_piston_endPointPosition);    
+    
+    //Calculate distance from end points     
+    vector piston_shaftEndDistanceDirection = sideA_piston_endPointPosition - sideB_piston_endPointPosition;
+    setpointattrib(0, "end_distance", sideB_piston_endPoint, piston_shaftEndDistanceDirection);
+    float piston_shaftEndDistance = distance(sideA_piston_endPointPosition, sideB_piston_endPointPosition);
+    f@piston_shaftEndDistance = piston_shaftEndDistance;
+
+    i@base_position = 0;
+    
+    setpointattrib(0, "keep", 0, 1);
+    setpointattrib(0, "keep", 1, 1);
+    setpointattrib(0, "keep", sideA_pivot1, 1);
+    setpointattrib(0, "keep", sideB_pivot1, 1);
+    setpointattrib(0, "keep", sideB_piston_startPoint, 1);    
+    
+}else if ( `chs("../transform1/ty")` == `chs("../transform2/ty")` ){ //Same height
+    
+    //origin forward and x axis'
+    sideA_origin_forward =  normalize(sideB_origin_position - sideA_origin_position);
+    setpointattrib(0, "forward", 0, sideA_origin_forward);
+    sideB_origin_forward = normalize(sideA_origin_position - sideB_origin_position);
+    setpointattrib(0, "forward", 1, sideB_origin_forward);
+    
+    setpointattrib(0, "positive_x", 0, set(0,1,0));
+    setpointattrib(0, "negative_x", 0, set(0,-1,0));    
+
+    setpointattrib(0, "positive_x", 1, set(0,1,0));
+    setpointattrib(0, "negative_x", 1, set(0,-1,0)); 
+    
+    //points pos
+    
+    sideA_pivot1_position = sideA_origin_position + sideA_origin_forward * sideA_piston_pivot_distance;
+    setpointattrib(0, "P", sideA_pivot1, sideA_pivot1_position); 
+    
+    sideB_pivot1_position = sideB_origin_position + sideB_origin_forward * sideB_piston_pivot_distance;
+    setpointattrib(0, "P", sideB_pivot1, sideB_pivot1_position); 
+    
+    //x axis 
+    
+    setpointattrib(0, "positive_x", sideA_pivot1, set(0,1,0));
+    setpointattrib(0, "negative_x", sideA_pivot1, set(0,-1,0));    
+
+    setpointattrib(0, "positive_x", sideB_pivot1, set(0,1,0));
+    setpointattrib(0, "negative_x", sideB_pivot1, set(0,-1,0));    
+    
+    vector sideA_pivot1_aim = sideA_origin_forward;
+    vector sideB_pivot1_aim = sideB_origin_forward;    
+    
+    
+    //No need for angle calc 
+   
+    
+    //Add start piston pt 
+    float sideA_pivot_to_shaft_length = detail(0, "sideA_pivot_to_shaft_length");
+
+    vector sideA_piston_startPointPosition = sideA_pivot1_position - sideA_pivot1_aim * sideA_pivot_to_shaft_length; 
+    int sideA_piston_startPoint = addpoint(0, sideA_piston_startPointPosition);     
+    
+    float sideB_pivot_to_shaft_length = detail(0, "sideB_pivot_to_shaft_length");
+
+    vector sideB_piston_startPointPosition = sideB_pivot1_position + sideB_pivot1_aim * sideB_pivot_to_shaft_length; 
+    int sideB_piston_startPoint = addpoint(0, sideB_piston_startPointPosition);      
+    
+    //Add end of piston point 
+    float sideA_piston_shaft_length = detail(0, "sideA_shaft_length");
+    vector sideA_piston_endPointPosition = sideA_pivot1_position + sideA_pivot1_aim * (sideA_pivot_to_shaft_length + sideA_piston_shaft_length);
+    int sideA_piston_endPoint = addpoint(0, sideA_piston_endPointPosition);
+    
+    float sideB_piston_shaft_length = detail(0, "sideB_shaft_length");
+    vector sideB_piston_endPointPosition = sideB_pivot1_position + sideB_pivot1_aim * (sideB_pivot_to_shaft_length + sideB_piston_shaft_length);
+    int sideB_piston_endPoint = addpoint(0, sideB_piston_endPointPosition);      
+
+    //Calculate distance from end points     
+    vector piston_shaftEndDistanceDirection = sideA_piston_endPointPosition - sideB_piston_endPointPosition;
+    setpointattrib(0, "end_distance", sideB_piston_endPoint, piston_shaftEndDistanceDirection);
+    float piston_shaftEndDistance = distance(sideA_piston_endPointPosition, sideB_piston_endPointPosition);
+    f@piston_shaftEndDistance = piston_shaftEndDistance;
+        
+    
+    i@base_position = 1;    
+
+    setpointattrib(0, "keep", 0, 1);
+    setpointattrib(0, "keep", 1, 1);
+    setpointattrib(0, "keep", sideA_pivot1, 1);
+    setpointattrib(0, "keep", sideB_pivot1, 1);
+    setpointattrib(0, "keep", sideB_piston_startPoint, 1);    
+    
+}else{ //Side A higher than Side B 
+
+    //origin forward and x axis'
+    sideA_origin_forward = normalize(set(0, -1, 0));
+    setpointattrib(0, "forward", 0, sideA_origin_forward);
+    sideB_origin_forward = normalize(set(0, 1, 0));
+    setpointattrib(0, "forward", 1, sideB_origin_forward);
+    
+    setpointattrib(0, "positive_x", 0, sideA_origin_negativeX);
+    setpointattrib(0, "negative_x", 0, sideA_origin_positiveX);
+
+    setpointattrib(0, "positive_x", 1, sideB_origin_positiveX);
+    setpointattrib(0, "negative_x", 1, sideB_origin_negativeX);
+    
+    //x rotate 
+    
+    vector4 sideA_origin_quatY = quaternion(-radians(`chs("../MASTER_CONTROL/point_a_rotationx")`) , sideA_origin_positiveX);
+    sideA_origin_forward = qrotate(sideA_origin_quatY, sideA_origin_forward);
+    setpointattrib(0, "forward", 0,  sideA_origin_forward);sideA_origin_forward = qrotate(sideA_origin_quatY, sideA_origin_forward);
+    setpointattrib(0, "forward", 0,  sideA_origin_forward);
+    
+    vector4 sideB_origin_quatY = quaternion(-radians(`chs("../MASTER_CONTROL/point_b_rotationx")`) , sideB_origin_positiveX);
+    sideB_origin_forward = qrotate(sideB_origin_quatY, sideB_origin_forward);
+    setpointattrib(0, "forward", 1,  sideB_origin_forward);
+    
+    //points pos 
+    
+    sideA_pivot1_position = sideA_origin_position + sideA_origin_forward * sideA_piston_pivot_distance;;
+    setpointattrib(0, "P", sideA_pivot1, sideA_pivot1_position);     
+    
+    sideB_pivot1_position = sideB_origin_position + sideB_origin_forward * sideB_piston_pivot_distance;;
+    setpointattrib(0, "P", sideB_pivot1, sideB_pivot1_position);  
+    
+    
+    vector sideA_pivot1_positiveX = sideA_origin_negativeX;
+    vector sideA_pivot1_negativeX = sideA_origin_positiveX;
+    setpointattrib(0, "positive_x", sideA_pivot1, sideA_pivot1_positiveX);
+    setpointattrib(0, "negative_x", sideA_pivot1, sideA_pivot1_negativeX);
+    
+    vector sideB_pivot1_positiveX =  sideB_origin_positiveX;
+    vector sideB_pivot1_negativeX =  sideB_origin_negativeX;
+    setpointattrib(0, "positive_x", sideB_pivot1, sideB_pivot1_positiveX);
+    setpointattrib(0, "negative_x", sideB_pivot1, sideB_pivot1_negativeX);
+    
+    // aim 
+    vector sideA_pivot1_aim = pivot1_aimDirection;
+    setpointattrib(0, "pivot1_aim", sideA_pivot1, pivot1_aimDirection);
+    vector sideB_pivot1_aim = -pivot1_aimDirection;    
+    setpointattrib(0, "pivot1_aim", sideB_pivot1, -pivot1_aimDirection);
+    
+    //flatten aim
+    
+    vector sideA_pivot1_flattenedAim = normalize(sideA_pivot1_aim * set(1, 0, 1));
+    
+    vector4 sideA_pivot1_quatY = quaternion(radians(`chs("../MASTER_CONTROL/point_a_rotationx")`) , sideA_origin_forward);
+    sideA_pivot1_flattenedAim = qrotate(sideA_pivot1_quatY, sideA_pivot1_flattenedAim);
+    setpointattrib(0, "pivot1_flattened_aim", sideA_pivot1, sideA_pivot1_flattenedAim);   
+    
+    vector sideB_pivot1_flattenedAim = normalize(sideB_pivot1_aim * set(1, 0, 1));
+    
+    vector4 sideB_pivot1_quatY = quaternion(radians(`chs("../MASTER_CONTROL/point_b_rotationx")`) , sideB_origin_forward);
+    sideB_pivot1_flattenedAim = qrotate(sideB_pivot1_quatY, sideB_pivot1_flattenedAim);
+    setpointattrib(0, "pivot1_flattened_aim", sideB_pivot1, sideB_pivot1_flattenedAim);     
+    
+    //add end pts 
+    
+    vector sideA_pivot1_aimPointPosistion = sideA_pivot1_position + sideA_pivot1_aim;
+    int sideA_pivot1_aimPoint = addpoint(0, sideA_pivot1_aimPointPosistion);
+    
+    vector sideA_pivot1_flattenedAimPointPosistion = sideA_pivot1_position + sideA_pivot1_flattenedAim;
+    int sideA_pivot1_flattenedAimPoint = addpoint(0, sideA_pivot1_flattenedAimPointPosistion); 
+    
+    vector sideA_pivot1_positiveXPointPosition = sideA_pivot1_position + sideA_pivot1_positiveX;
+    int sideA_pivot1_positiveXPoint = addpoint(0, sideA_pivot1_positiveXPointPosition);
+    
+    vector sideA_pivot1_negativeXPointPosition = sideA_pivot1_position + sideA_pivot1_negativeX;
+    int sideA_pivot1_negativeXPoint = addpoint(0, sideA_pivot1_negativeXPointPosition);
+    
+    vector sideB_pivot1_aimPointPosistion = sideB_pivot1_position + sideB_pivot1_aim;
+    int sideB_pivot1_aimPoint = addpoint(0, sideB_pivot1_aimPointPosistion);
+    
+    vector sideB_pivot1_flattenedAimPointPosistion = sideB_pivot1_position + sideB_pivot1_flattenedAim;
+    int sideB_pivot1_flattenedAimPoint = addpoint(0, sideB_pivot1_flattenedAimPointPosistion); 
+    
+    vector sideB_pivot1_positiveXPointPosition = sideB_pivot1_position + sideB_pivot1_positiveX;
+    int sideB_pivot1_positiveXPoint = addpoint(0, sideB_pivot1_positiveXPointPosition);
+    
+    vector sideB_pivot1_negativeXPointPosition = sideB_pivot1_position + sideB_pivot1_negativeX;
+    int sideB_pivot1_negativeXPoint = addpoint(0, sideB_pivot1_negativeXPointPosition);    
+    
+
+    //aim to flattened aim angle 
+    
+    vector sideA_pivot1_aimToFlattenedAimDirection = sideA_pivot1_flattenedAimPointPosistion - sideA_pivot1_aimPointPosistion;
+    vector sideA_pivot1_aimToFlattenedAim = sideA_pivot1_aimToFlattenedAimDirection;
+    float sideA_pivot1_aimToFlattenedAimMagnitude = length(sideA_pivot1_aimToFlattenedAim);
+    float sideA_pivot1_aimToFlattenedAimAngle = degrees(acos( (2 - (sideA_pivot1_aimToFlattenedAimMagnitude * sideA_pivot1_aimToFlattenedAimMagnitude)) / (2)) );
+    f@sideA_pivot1_aimToFlattenedAimAngle = sideA_pivot1_aimToFlattenedAimAngle;
+    setpointattrib(0, "hyp", sideA_pivot1_aimPoint, sideA_pivot1_aimToFlattenedAim);
+    
+    vector sideB_pivot1_aimToFlattenedAimDirection = sideB_pivot1_flattenedAimPointPosistion - sideB_pivot1_aimPointPosistion;
+    vector sideB_pivot1_aimToFlattenedAim = sideB_pivot1_aimToFlattenedAimDirection;
+    float sideB_pivot1_aimToFlattenedAimMagnitude = length(sideB_pivot1_aimToFlattenedAim);
+    float sideB_pivot1_aimToFlattenedAimAngle = degrees(acos( (2 - (sideB_pivot1_aimToFlattenedAimMagnitude * sideB_pivot1_aimToFlattenedAimMagnitude)) / (2)) );
+    f@sideB_pivot1_aimToFlattenedAimAngle = sideB_pivot1_aimToFlattenedAimAngle;
+    setpointattrib(0, "hyp", sideB_pivot1_aimPoint, sideB_pivot1_aimToFlattenedAim);        
+    
+    
+    // y rotation - x clockwise
+    
+    vector sideA_pivot1_positiveZ = normalize(cross(sideA_pivot1_positiveX, sideA_origin_forward));
+    setpointattrib(0, "positive_z", sideA_pivot1, sideA_pivot1_positiveZ);
+    vector sideA_pivot1_negativeZ = normalize(cross(sideA_pivot1_negativeX, sideA_origin_forward));
+    setpointattrib(0, "negative_z", sideA_pivot1, sideA_pivot1_negativeZ);
+    
+    vector sideB_pivot1_positiveZ = normalize(cross(sideB_pivot1_positiveX, sideB_origin_forward));
+    setpointattrib(0, "positive_z", sideB_pivot1, sideB_pivot1_positiveZ);
+    vector sideB_pivot1_negativeZ = normalize(cross(sideB_pivot1_negativeX, sideB_origin_forward));
+    setpointattrib(0, "negative_z", sideB_pivot1, sideB_pivot1_negativeZ);    
+    
+    if (sideA_pivot1_aim.x < 0) {
+     
+        vector sideA_pivot1_yRotationHypotenous = sideA_pivot1_flattenedAimPointPosistion - sideA_pivot1_positiveXPointPosition;
+        setpointattrib(0, "hyp", sideA_pivot1_positiveXPoint, sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationHypotenousMagnitude = length(sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationAngle = degrees(acos( (2 - (sideA_pivot1_yRotationHypotenousMagnitude * sideA_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;     
+        
+        if (sideA_pivot1_aim.x < 0 && sideA_pivot1_aim.z < 0){
+            sideA_pivot1_yRotationAngle = 360 - sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;    
+        } else if (sideA_pivot1_aim.x < 0 && sideA_pivot1_aim.z > 0){
+            sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle; 
+        }
+
+        vector sideB_pivot1_yRotationHypotenous = sideB_pivot1_flattenedAimPointPosistion - sideB_pivot1_positiveXPointPosition;
+        setpointattrib(0, "hyp", sideB_pivot1_positiveXPoint, sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationHypotenousMagnitude = length(sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationAngle = degrees(acos( (2 - (sideB_pivot1_yRotationHypotenousMagnitude * sideB_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;
+
+        if (sideB_pivot1_aim.x > 0 && sideB_pivot1_aim.z < 0){
+            sideB_pivot1_yRotationAngle = 360 - sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;    
+        } else if (sideB_pivot1_aim.x > 0 && sideB_pivot1_aim.z > 0){
+            sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle; 
+        }        
+        
+    } else if (sideA_pivot1_aim.x > 0 ) { 
+    
+    
+        vector sideA_pivot1_yRotationHypotenous = sideA_pivot1_flattenedAimPointPosistion - sideA_pivot1_negativeXPointPosition;
+        setpointattrib(0, "hyp", sideA_pivot1_negativeXPoint, sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationHypotenousMagnitude = length(sideA_pivot1_yRotationHypotenous);
+        float sideA_pivot1_yRotationAngle = degrees(acos( (2 - (sideA_pivot1_yRotationHypotenousMagnitude * sideA_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle;
+
+        if (sideA_pivot1_aim.x > 0 && sideA_pivot1_aim.z > 0) {
+            sideA_pivot1_yRotationAngle = 180 - sideA_pivot1_yRotationAngle ;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle; 
+        } else if (sideA_pivot1_aim.x > 0 && sideA_pivot1_aim.z < 0) {
+            sideA_pivot1_yRotationAngle = 180 + sideA_pivot1_yRotationAngle;
+            f@sideA_pivot1_yRotationAngle = sideA_pivot1_yRotationAngle; 
+        } 
+        
+        vector sideB_pivot1_yRotationHypotenous = sideB_pivot1_flattenedAimPointPosistion - sideB_pivot1_negativeXPointPosition;
+        setpointattrib(0, "hyp", sideB_pivot1_negativeXPoint, sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationHypotenousMagnitude = length(sideB_pivot1_yRotationHypotenous);
+        float sideB_pivot1_yRotationAngle = degrees(acos( (2 - (sideB_pivot1_yRotationHypotenousMagnitude * sideB_pivot1_yRotationHypotenousMagnitude)) / (2)) );
+        f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle;        
+
+        if (sideB_pivot1_aim.x < 0 && sideB_pivot1_aim.z < 0) {
+            sideB_pivot1_yRotationAngle = 180 + sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle; 
+        } else if (sideB_pivot1_aim.x < 0 && sideB_pivot1_aim.z > 0) {
+            sideB_pivot1_yRotationAngle = 180 - sideB_pivot1_yRotationAngle;
+            f@sideB_pivot1_yRotationAngle = sideB_pivot1_yRotationAngle; 
+        }         
+    } 
+       
+    if (sideA_pivot1_flattenedAim ==  sideA_pivot1_positiveX){
+        f@sideA_pivot1_yRotationAngle = 0;
+    } else if (sideA_pivot1_flattenedAim ==  sideA_pivot1_positiveZ){
+        f@sideA_pivot1_yRotationAngle = 90;
+    } else if (sideA_pivot1_flattenedAim ==  sideA_pivot1_negativeX){
+        f@sideA_pivot1_yRotationAngle = 180;
+    } else if (sideA_pivot1_flattenedAim ==  sideA_pivot1_negativeZ){
+        f@sideA_pivot1_yRotationAngle = 270;    
+    }
+    
+
+    
+    if (sideB_pivot1_flattenedAim ==  sideB_pivot1_positiveX){
+        f@sideB_pivot1_yRotationAngle = 0;
+    } else if (sideB_pivot1_flattenedAim ==  sideB_pivot1_positiveZ){
+        f@sideB_pivot1_yRotationAngle = 90;
+    } else if (sideB_pivot1_flattenedAim ==  sideB_pivot1_negativeX){
+        f@sideB_pivot1_yRotationAngle = 180;
+    } else if (sideB_pivot1_flattenedAim ==  sideB_pivot1_negativeZ){
+        f@sideA_pivot1_yRotationAngle = 270;    
+    }        
+   
+    //Add start piston pt 
+    float sideA_pivot_to_shaft_length = detail(0, "sideA_pivot_to_shaft_length");
+
+    vector sideA_piston_startPointPosition = sideA_pivot1_position - sideA_pivot1_aim * sideA_pivot_to_shaft_length; 
+    int sideA_piston_startPoint = addpoint(0, sideA_piston_startPointPosition);     
+    
+    float sideB_pivot_to_shaft_length = detail(0, "sideB_pivot_to_shaft_length");
+
+    vector sideB_piston_startPointPosition = sideB_pivot1_position + sideB_pivot1_aim * sideB_pivot_to_shaft_length; 
+    int sideB_piston_startPoint = addpoint(0, sideB_piston_startPointPosition);     
+    
+    
+    //Add end of piston point 
+    float sideA_piston_shaft_length = detail(0, "sideA_shaft_length");
+    vector sideA_piston_endPointPosition = sideA_pivot1_position + sideA_pivot1_aim * (sideA_pivot_to_shaft_length + sideA_piston_shaft_length);
+    int sideA_piston_endPoint = addpoint(0, sideA_piston_endPointPosition);
+    
+    float sideB_piston_shaft_length = detail(0, "sideB_shaft_length");
+    vector sideB_piston_endPointPosition = sideB_pivot1_position + sideB_pivot1_aim * (sideB_pivot_to_shaft_length + sideB_piston_shaft_length);
+    int sideB_piston_endPoint = addpoint(0, sideB_piston_endPointPosition);  
+
+    //Calculate distance from end points     
+    vector piston_shaftEndDistanceDirection = sideA_piston_endPointPosition - sideB_piston_endPointPosition;
+    setpointattrib(0, "end_distance", sideB_piston_endPoint, piston_shaftEndDistanceDirection);
+    float piston_shaftEndDistance = distance(sideA_piston_endPointPosition, sideB_piston_endPointPosition);
+    f@piston_shaftEndDistance = piston_shaftEndDistance;
+    
+    
+    i@base_position = 2;
+
+    setpointattrib(0, "keep", 0, 1);
+    setpointattrib(0, "keep", 1, 1);
+    setpointattrib(0, "keep", sideA_pivot1, 1);
+    setpointattrib(0, "keep", sideB_pivot1, 1);
+    setpointattrib(0, "keep", sideB_piston_startPoint, 1);      
+    
+}
+
+
+
+removedetailattrib(0, "compressed_spring_length");
+removedetailattrib(0, "extended_spring_length");
+
+removedetailattrib(0, "sideA_pivot_distance");
+removedetailattrib(0, "sideA_pivot_to_shaft_length");
+removedetailattrib(0, "sideA_shaft_length");
+
+removedetailattrib(0, "sideB_pivot_distance");
+removedetailattrib(0, "sideB_pivot_to_shaft_length");
+removedetailattrib(0, "sideB_shaft_length");
+
+
+
